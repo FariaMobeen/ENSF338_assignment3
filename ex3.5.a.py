@@ -1,3 +1,4 @@
+#code from chatgpt
 # Search in a sorted array
 import random
 import time
