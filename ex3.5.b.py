@@ -1,94 +1,90 @@
-#code from chatgpt
-# Insertion in and extraction from priority queue
-
-
 import timeit
 import random
-import statistics
 import matplotlib.pyplot as plt
-import heapq
-from queue import PriorityQueue
 
 
-# code for an inefficient implementation
-class PriorityQueueList:
-   def __init__(self):
-       self.queue = []
+class PriorityQueue:
+    def __init__(self):
+        self.queue = []
 
 
-   def insert(self, priority, item):
-       self.queue.append((priority, item))
-       self.queue = sorted(self.queue, key=lambda x: x[0])
+    def insert(self, item, priority):
+        self.queue.append((item, priority))
+        self._bubble_up(len(self.queue) - 1)
 
 
-   def pop(self):
-       if len(self.queue) == 0:
-           return None
-       item = self.queue[0]
-       self.queue = self.queue[1:]
-       return item
-# Worst-case complexity: O(nlogn)
+    def extract_max(self):
+        if len(self.queue) == 0:
+            raise IndexError('Queue is empty')
+        max_item = self.queue[0]
+        last_item = self.queue.pop()
+        if len(self.queue) > 0:
+            self.queue[0] = last_item
+            self._bubble_down(0)
+        return max_item
 
 
-# efficient implementation
-class PriorityQueueHeap:
-   def __init__(self):
-       self.queue = []
+    def _bubble_up(self, index):
+        parent = (index - 1) // 2
+        if parent >= 0 and self.queue[index][1] > self.queue[parent][1]:
+            self.queue[index], self.queue[parent] = self.queue[parent], self.queue[index]
+            self._bubble_up(parent)
 
 
-   def insert(self, priority, item):
-       heapq.heappush(self.queue, (priority, item))
+    def _bubble_down(self, index):
+        left_child = 2 * index + 1
+        right_child = 2 * index + 2
+        largest = index
+        if left_child < len(self.queue) and self.queue[left_child][1] > self.queue[largest][1]:
+            largest = left_child
+        if right_child < len(self.queue) and self.queue[right_child][1] > self.queue[largest][1]:
+            largest = right_child
+        if largest != index:
+            self.queue[index], self.queue[largest] = self.queue[largest], self.queue[index]
+            self._bubble_down(largest)
 
 
-   def pop(self):
-       if len(self.queue) == 0:
-           return None
-       item = heapq.heappop(self.queue)
-       return item
+def test_priority_queue(n):
+    # Initialize empty priority queue
+    pq = PriorityQueue()
+    # Generate list of random priorities and items
+    priorities = [random.randint(0, 100) for i in range(n)]
+    items = list(range(n))
+    random.shuffle(items)
+    # Insert items into priority queue
+    for i in range(n):
+        pq.insert(items[i], priorities[i])
+    # Extract all items from priority queue
+    for i in range(n):
+        pq.extract_max()
 
 
-# provide the code for an experiment that demonstrates the difference.
+# Test inefficient implementation
 n = 1000
-trials = 100
+t1 = timeit.Timer(lambda: test_priority_queue(n))
+inefficient_results = t1.repeat(100, 1)
 
 
-# Generate random data
-data = [random.randint(0, 1000000) for i in range(n)]
+# Test efficient implementation
+pq = PriorityQueue()
+n = 1000
+t2 = timeit.Timer(lambda: test_priority_queue(n))
+efficient_results = t2.repeat(100, 1)
 
 
-# Measure time for inefficient priority queue
-inefficient_times = []
-for i in range(trials):
-   pq = PriorityQueueList()
-   start_time = timeit.default_timer()
-   for item in data:
-       pq.insert(item)
-   while not pq.is_empty():
-       pq.extract_min()
-   end_time = timeit.default_timer()
-   inefficient_times.append(end_time - start_time)
-
-
-# Measure time for efficient priority queue
-efficient_times = []
-for i in range(trials):
-   pq = PriorityQueueHeap()
-   start_time = timeit.default_timer()
-   for item in data:
-       pq.insert(item)
-   while not pq.is_empty():
-       pq.extract_min()
-   end_time = timeit.default_timer()
-   efficient_times.append(end_time - start_time)
-
-
-# Print aggregate times
-print("Inefficient: min={}, avg={}".format(min(inefficient_times), statistics.mean(inefficient_times)))
-print("Efficient: min={}, avg={}".format(min(efficient_times), statistics.mean(efficient_times)))
-
-
-# Plot time distributions
-plt.hist(inefficient_times, bins=20, alpha=0.5, label='Inefficient')
-plt.hist(efficient_times, bins=20, alpha=0.5, label='Efficient')
+# Plot results
+plt.hist(inefficient_results, bins=20, alpha=0.5, label='Inefficient')
+plt.hist(efficient_results, bins=20, alpha=0.5, label='Efficient')
 plt.legend(loc='upper right')
+plt.xlabel('Execution Time (s)')
+plt.ylabel('Frequency')
 plt.show()
+
+
+# Print aggregate results
+print('Inefficient Implementation:')
+print('Min Execution Time:', min(inefficient_results))
+print('Average Execution Time:', sum(inefficient_results) / len(inefficient_results))
+print('Efficient Implementation:')
+print('Min Execution Time:', min(efficient_results))
+print('Average Execution Time:', sum(efficient_results) / len(efficient_results))
