@@ -7,7 +7,7 @@ prev_capacity = sys.getsizeof([])
 
 for i in range(64):
    list = list(range(i))
-   curr_capacity = sys.getsizeof(lst)
+   curr_capacity = sys.getsizeof(list)
 
 
    if curr_capacity != prev_capacity:
@@ -15,5 +15,3 @@ for i in range(64):
 
 
    prev_capacity = curr_capacity
-
-
