@@ -1,15 +1,14 @@
-#code from chatgpt
+#code from chat gpt
 import threading
 import random
 import time
+
 class CircularQueue:
     def __init__(self, size):
         self.size = size
         self.queue = [None for i in range(size)]
         self.head = self.tail = -1
         self._lock = threading.Lock()
-        self._not_full = threading.Condition(self._lock)
-        self._not_empty = threading.Condition(self._lock)
 
     def lock(self):
         self._lock.acquire()
@@ -18,66 +17,66 @@ class CircularQueue:
         self._lock.release()
 
     def enqueue(self, data):
+    
         while True:
             self.lock()
-            if (self.tail + 1) % self.size == self.head:
-                # Queue is full, wait for a signal that the queue is not full
-                self._not_full.wait(1)
-            else:
-                # Queue is not full, insert element
-                if self.head == -1:
-                    self.head = 0
-                self.tail = (self.tail + 1) % self.size
-                self.queue[self.tail] = data
-                self._not_empty.notify()
+            if (self.head == 0 and self.tail == self.size-1) or (self.tail == self.head-1):
+                # Queue is full, wait 1 second and try again
                 self.unlock()
-                return
-
+                time.sleep(1)
+                continue
+            
+            if self.head == -1:
+                # Empty queue
+                self.head = self.tail = 0
+            elif self.tail == self.size-1:
+                self.tail = 0
+            else:
+                self.tail += 1
+                
+            self.queue[self.tail] = data
             self.unlock()
+            break
 
+    
     def dequeue(self):
+        
         while True:
             self.lock()
             if self.head == -1:
-                # Queue is empty, wait for a signal that the queue is not empty
-                self._not_empty.wait(1)
-            else:
-                # Queue is not empty, remove element
-                data = self.queue[self.head]
-                if self.head == self.tail:
-                    self.head = self.tail = -1
-                else:
-                    self.head = (self.head + 1) % self.size
-                self._not_full.notify()
+                # Empty queue, wait 1 second and try again
                 self.unlock()
-                return data
-
+                time.sleep(1)
+                continue
+            
+            data = self.queue[self.head]
+            self.queue[self.head] = None
+            
+            if self.head == self.tail:
+                # Queue becomes empty
+                self.head = self.tail = -1
+            elif self.head == self.size-1:
+                self.head = 0
+            else:
+                self.head += 1
+                
             self.unlock()
+            return data
+
 
 def producer():
     while True:
-        # Implement producer function
         num = random.randint(1, 10)
         time.sleep(num)
-        q.lock()
         q.enqueue(num)
-        q.unlock()
-        
+     
 
 def consumer():
     while True:
-        # Generate a random number between 1 and 10
         num = random.randint(1, 10)
-
-        # Wait for the generated number of seconds
         time.sleep(num)
-
-        # Dequeue a number from the queue and print it
-        q.lock()
         data = q.dequeue()
-        q.unlock()
-        if data is not None:
-            print(f"Consumed {data}")
+        print(f"Consumed {data}")
 
 if __name__ == '__main__':
     q = CircularQueue(5)
