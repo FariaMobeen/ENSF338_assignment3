@@ -1,3 +1,4 @@
+#code from chatgpt
 import timeit
 import random
 import matplotlib.pyplot as plt
